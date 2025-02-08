@@ -47,7 +47,7 @@ export const Card = ({ onPress }: Props) => {
                 <Text className='text-base font-rubik-bold text-black-300'>
                     Cozy Studio
                 </Text>
-                <Text className='text-xl font-rubik text-black-200' numberOfLines={1}>
+                <Text className='text-xs font-rubik text-black-200' numberOfLines={1}>
                     22 w 15th St, New York
                 </Text>
                 <View className='flex flex-row items-center justify-between mt-2'>
