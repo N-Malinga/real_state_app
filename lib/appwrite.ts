@@ -1,6 +1,7 @@
-import { Avatars, Client, OAuthProvider, Account, Databases } from "react-native-appwrite";
+import { Avatars, Client, OAuthProvider, Account, Databases, Query } from "react-native-appwrite";
 import * as Linking from "expo-linking";
 import { openAuthSessionAsync } from "expo-web-browser";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 export const config = {
   platform: "com.malinga.livva",
@@ -9,7 +10,7 @@ export const config = {
   databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID,
   galleriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_GALLERIES_COLLECTION_ID,
   reviewsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_REVIEWS_COLLECTION_ID,
-  agentsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_AGENTS_COLLECTION_ID,
+  agentsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_AGENT_COLLECTION_ID,
   propertiesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_PROPERTIES_COLLECTION_ID,
 };
 
@@ -22,7 +23,7 @@ client
 
 export const avatar = new Avatars(client);
 export const account = new Account(client);
-export const database = new Databases(client);
+export const databases = new Databases(client);
 
 export async function login() {
   try {
@@ -86,5 +87,59 @@ export async function getCurrentUser() {
   } catch (error) {
     console.log(error);
     return false;
+  }
+}
+
+export async function getLatestProperties(){
+  try{
+    const result = await databases.listDocuments(
+      config.databaseId!, //!- indicate that the value is not null or undefined
+      config.propertiesCollectionId!,
+      [Query.orderAsc('$createdAt'), Query.limit(5)] //The third argument is an array of query options:
+      //This query option orders the results in ascending order based on the createdAt field.
+    )
+    return result.documents;
+  }catch(error){
+    console.log(error);
+    return [];
+  }
+}
+
+export async  function getProperties({filter, query, limit}:{
+  filter: string;
+  query: string;
+  limit?: number;
+}){
+  try{
+    const buildQuery = [Query.orderDesc('$createdAt')];
+    
+    if(filter && filter !== 'All'){
+      buildQuery.push(Query.equal('type', filter));
+    }
+
+    if(query){
+      buildQuery.push(
+        Query.or([
+          Query.search('name', query),
+          Query.search('address', query),
+          Query.search('type', query),
+        ])
+      )
+    }
+
+    if(limit){
+      buildQuery.push(Query.limit(limit));
+    };
+
+    const result = await databases.listDocuments(
+      config.databaseId!,
+      config.propertiesCollectionId!,
+      buildQuery,
+    )
+    return result.documents;
+
+  }catch(error){
+    console.log(error);
+    return [];
   }
 }
